@@ -13,6 +13,8 @@ RUN \
 RUN pip3 install --upgrade pip==20.1.1
 RUN pip3 install --upgrade setuptools==47.3.2
 RUN pip3 install --upgrade docker-compose==1.23.2
+COPY tests/system/requirements.txt .
+RUN pip3 install -r requirements.txt
 
 # Libbeat specific
 RUN mkdir -p /etc/pki/tls/certs
