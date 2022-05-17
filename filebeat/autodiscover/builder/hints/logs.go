@@ -36,7 +36,7 @@ import (
 )
 
 func init() {
-	autodiscover.Registry.AddBuilder("hints", NewLogHints)
+	autodiscover.Registry.AddBuilder("hints", NewLogHints) //nolint: errcheck // Can't handle the error here.
 }
 
 const (
@@ -49,7 +49,7 @@ const (
 )
 
 // validModuleNames to sanitize user input
-var validModuleNames = regexp.MustCompile("[^a-zA-Z0-9\\_\\-]+")
+var validModuleNames = regexp.MustCompile("[^a-zA-Z0-9\\_\\-]+") //nolint:gosimple // String escapes are fine here.
 
 type logHints struct {
 	config   *config
@@ -100,35 +100,35 @@ func (l *logHints) CreateConfig(event bus.Event, options ...ucfg.Option) []*conf
 		return template.ApplyConfigTemplate(event, configs)
 	}
 
-	var configs []*conf.C
 	inputs := l.getInputs(hints)
+	configs := make([]*conf.C, 0, len(inputs))
 	for _, h := range inputs {
 		// Clone original config, enable it if disabled
 		config, _ := conf.NewConfigFrom(l.config.DefaultConfig)
-		config.Remove("enabled", -1)
+		config.Remove("enabled", -1) //nolint:errcheck // Error intentionally ignored.
 
 		tempCfg := mapstr.M{}
 		mline := l.getMultiline(h)
 		if len(mline) != 0 {
-			tempCfg.Put(multiline, mline)
+			tempCfg.Put(multiline, mline) //nolint:errcheck // Error intentionally ignored.
 		}
 		if ilines := l.getIncludeLines(h); len(ilines) != 0 {
-			tempCfg.Put(includeLines, ilines)
+			tempCfg.Put(includeLines, ilines) //nolint:errcheck // Error intentionally ignored.
 		}
 		if elines := l.getExcludeLines(h); len(elines) != 0 {
-			tempCfg.Put(excludeLines, elines)
+			tempCfg.Put(excludeLines, elines) //nolint:errcheck // Error intentionally ignored.
 		}
 
 		if procs := l.getProcessors(h); len(procs) != 0 {
-			tempCfg.Put(processors, procs)
+			tempCfg.Put(processors, procs) //nolint:errcheck // Error intentionally ignored.
 		}
 
 		if pip := l.getPipeline(h); len(pip) != 0 {
-			tempCfg.Put(pipeline, pip)
+			tempCfg.Put(pipeline, pip) //nolint:errcheck // Error intentionally ignored.
 		}
 
 		if jsonOpts := l.getJSONOptions(h); len(jsonOpts) != 0 {
-			tempCfg.Put(json, jsonOpts)
+			tempCfg.Put(json, jsonOpts) //nolint:errcheck // Error intentionally ignored.
 		}
 		// Merge config template with the configs from the annotations
 		if err := config.Merge(tempCfg); err != nil {
@@ -147,9 +147,9 @@ func (l *logHints) CreateConfig(event bus.Event, options ...ucfg.Option) []*conf
 				filesetConf, _ := conf.NewConfigFrom(config)
 
 				if inputType, _ := filesetConf.String("type", -1); inputType == harvester.ContainerType {
-					filesetConf.SetString("stream", -1, cfg.Stream)
+					filesetConf.SetString("stream", -1, cfg.Stream) //nolint:errcheck // Error intentionally ignored.
 				} else {
-					filesetConf.SetString("containers.stream", -1, cfg.Stream)
+					filesetConf.SetString("containers.stream", -1, cfg.Stream) //nolint:errcheck // Error intentionally ignored.
 				}
 
 				moduleConf[fileset+".enabled"] = cfg.Enabled
@@ -254,7 +254,7 @@ func (l *logHints) getFilesets(hints mapstr.M, module string) map[string]*filese
 
 func (l *logHints) getInputs(hints mapstr.M) []mapstr.M {
 	modules := builder.GetHintsAsList(hints, l.config.Key)
-	var output []mapstr.M
+	output := make([]mapstr.M, 0, len(modules))
 
 	for _, mod := range modules {
 		output = append(output, mapstr.M{
