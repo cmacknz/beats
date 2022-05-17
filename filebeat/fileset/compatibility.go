@@ -129,7 +129,7 @@ func NewProcessor(raw interface{}) (p Processor, err error) {
 		return p, fmt.Errorf("processor is not an object, got %T", raw)
 	}
 
-	var keys []string
+	keys := make([]string, 0, len(rawAsMap))
 	for k := range rawAsMap {
 		keys = append(keys, k)
 	}
@@ -161,19 +161,19 @@ func (p *Processor) Config() map[string]interface{} {
 // GetBool returns a boolean flag from the processor's configuration.
 func (p *Processor) GetBool(key string) (value, ok bool) {
 	value, ok = p.config[key].(bool)
-	return
+	return value, ok
 }
 
 // GetString returns a string flag from the processor's configuration.
 func (p *Processor) GetString(key string) (value string, ok bool) {
 	value, ok = p.config[key].(string)
-	return
+	return value, ok
 }
 
 // GetList returns an array from the processor's configuration.
 func (p *Processor) GetList(key string) (value []interface{}, ok bool) {
 	value, ok = p.config[key].([]interface{})
-	return
+	return value, ok
 }
 
 // Set a flag in the processor's configuration.
@@ -184,7 +184,7 @@ func (p *Processor) Set(key string, value interface{}) {
 // Get a flag from the processor's configuration.
 func (p *Processor) Get(key string) (value interface{}, ok bool) {
 	value, ok = p.config[key]
-	return
+	return value, ok
 }
 
 // Delete a configuration flag.

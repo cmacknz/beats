@@ -62,7 +62,8 @@ func TestLoadManifestNginx(t *testing.T) {
 
 	vars := manifest.Vars
 	assert.Equal(t, "paths", vars[0]["name"])
-	path := (vars[0]["default"]).([]interface{})[0].(string)
+	path, ok := (vars[0]["default"]).([]interface{})[0].(string)
+	assert.True(t, ok, "Path type cast failed")
 	assert.Equal(t, path, "/var/log/nginx/access.log*")
 }
 
@@ -89,7 +90,8 @@ func TestEvaluateVarsNginx(t *testing.T) {
 	vars, err := fs.evaluateVars(makeTestInfo("6.6.0"))
 	require.NoError(t, err)
 
-	builtin := vars["builtin"].(map[string]interface{})
+	builtin, ok := vars["builtin"].(map[string]interface{})
+	assert.True(t, ok, "Builtin type cast failed")
 	assert.IsType(t, "a-mac-with-esc-key", builtin["hostname"])
 	assert.IsType(t, "local", builtin["domain"])
 

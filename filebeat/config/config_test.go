@@ -40,7 +40,7 @@ func TestReadConfig2(t *testing.T) {
 	config := &Config{}
 
 	// Reads second config file
-	err = cfgfile.Read(config, absPath+"/config2.yml")
+	err = cfgfile.Read(config, absPath+"/config2.yml") //nolint: staticcheck // Ignore deprecation, no reason to switch to Load().
 	assert.NoError(t, err)
 }
 

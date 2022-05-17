@@ -809,7 +809,7 @@ func TestRemoveNetworkDirectionProcessor(t *testing.T) {
 }
 
 func TestReplaceConvertIPWithGrok(t *testing.T) {
-	logp.TestingSetup()
+	assert.NoError(t, logp.TestingSetup())
 	cases := []struct {
 		name          string
 		esVersion     *common.Version
@@ -1117,7 +1117,7 @@ func TestRemoveRegisteredDomainProcessor(t *testing.T) {
 }
 
 func TestReplaceAlternativeFlowProcessors(t *testing.T) {
-	logp.TestingSetup()
+	assert.NoError(t, logp.TestingSetup())
 	cases := []struct {
 		name          string
 		esVersion     *common.Version

@@ -106,9 +106,9 @@ func mergeConfigFiles(configFiles []string, config *Config) error {
 		tmpConfig := struct {
 			Filebeat Config
 		}{}
-		err := cfgfile.Read(&tmpConfig, file)
+		err := cfgfile.Read(&tmpConfig, file) //nolint:staticcheck // Ignore deprecation, no reason to switch to Load() yet.
 		if err != nil {
-			return fmt.Errorf("Failed to read %s: %s", file, err)
+			return fmt.Errorf("Failed to read %s: %w", file, err)
 		}
 
 		config.Inputs = append(config.Inputs, tmpConfig.Filebeat.Inputs...)
@@ -157,7 +157,7 @@ func (config *Config) ListEnabledInputs() []string {
 	var inputs []string
 	for _, input := range config.Inputs {
 		if input.Enabled() {
-			input.Unpack(&t)
+			input.Unpack(&t) //nolint:errcheck // Intentionally ignorning error.
 			inputs = append(inputs, t.Type)
 		}
 	}
