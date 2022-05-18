@@ -93,7 +93,7 @@ func NewInput(
 	cleanupNeeded := true
 	cleanupIfNeeded := func(f func() error) {
 		if cleanupNeeded {
-			f()
+			f() //nolint:errcheck // Intentionally ignoring any errors here.
 		}
 	}
 
@@ -103,10 +103,10 @@ func NewInput(
 		return nil, err
 	}
 	if err := inputConfig.resolveRecursiveGlobs(); err != nil {
-		return nil, fmt.Errorf("Failed to resolve recursive globs in config: %v", err)
+		return nil, fmt.Errorf("Failed to resolve recursive globs in config: %w", err)
 	}
 	if err := inputConfig.normalizeGlobPatterns(); err != nil {
-		return nil, fmt.Errorf("Failed to normalize globs patterns: %v", err)
+		return nil, fmt.Errorf("Failed to normalize globs patterns: %w", err)
 	}
 
 	if len(inputConfig.Paths) == 0 {
@@ -115,7 +115,7 @@ func NewInput(
 
 	identifier, err := file.NewStateIdentifier(inputConfig.FileIdentity)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize file identity generator: %+v", err)
+		return nil, fmt.Errorf("failed to initialize file identity generator: %w", err)
 	}
 
 	// Note: underlying output.
@@ -468,7 +468,7 @@ func getFileState(path string, info os.FileInfo, p *Input) (file.State, error) {
 	var absolutePath string
 	absolutePath, err = filepath.Abs(path)
 	if err != nil {
-		return file.State{}, fmt.Errorf("could not fetch abs path for file %s: %s", absolutePath, err)
+		return file.State{}, fmt.Errorf("could not fetch abs path for file %s: %w", absolutePath, err)
 	}
 	p.logger.Debugf("Check file for harvesting: %s", absolutePath)
 	// Create new state for comparison
@@ -550,7 +550,7 @@ func (p *Input) scan() {
 		if isNewState {
 			logger.Debugf("Start harvester for new file: %s", newState.Source)
 			err := p.startHarvester(logger, newState, 0)
-			if err == errHarvesterLimit {
+			if errors.Is(err, errHarvesterLimit) {
 				logger.Debugf(harvesterErrMsg, newState.Source, err)
 				continue
 			}
@@ -750,7 +750,7 @@ func (p *Input) startHarvester(logger *logp.Logger, state file.State, offset int
 	err = h.Setup()
 	if err != nil {
 		p.numHarvesters.Dec()
-		return fmt.Errorf("error setting up harvester: %s", err)
+		return fmt.Errorf("error setting up harvester: %w", err)
 	}
 
 	// Update state before staring harvester
@@ -785,7 +785,7 @@ func (p *Input) updateState(state file.State) error {
 		stateToRemove := file.State{Id: state.PrevId, TTL: 0, Finished: true, Meta: nil}
 		err := p.doUpdate(stateToRemove)
 		if err != nil {
-			return fmt.Errorf("failed to remove outdated states based on prev_id: %v", err)
+			return fmt.Errorf("failed to remove outdated states based on prev_id: %w", err)
 		}
 	}
 

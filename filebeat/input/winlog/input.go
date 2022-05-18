@@ -18,6 +18,7 @@
 package winlog
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -60,7 +61,7 @@ func configure(cfg *conf.C) ([]cursor.Source, cursor.Input, error) {
 	//       as is common for other inputs?
 	eventLog, err := eventlog.New(cfg)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to create new event log. %v", err)
+		return nil, nil, fmt.Errorf("Failed to create new event log. %w", err)
 	}
 
 	sources := []cursor.Source{eventLog}
@@ -70,10 +71,13 @@ func configure(cfg *conf.C) ([]cursor.Source, cursor.Input, error) {
 func (eventlogRunner) Name() string { return pluginName }
 
 func (eventlogRunner) Test(source cursor.Source, ctx input.TestContext) error {
-	api := source.(eventlog.EventLog)
+	api, ok := source.(eventlog.EventLog)
+	if !ok {
+		return fmt.Errorf("could not convert source to event log: %v", source.Name())
+	}
 	err := api.Open(checkpoint.EventLogState{})
 	if err != nil {
-		return fmt.Errorf("Failed to open '%v': %v", api.Name(), err)
+		return fmt.Errorf("Failed to open '%v': %w", api.Name(), err)
 	}
 	return api.Close()
 }
@@ -85,7 +89,10 @@ func (eventlogRunner) Run(
 	publisher cursor.Publisher,
 ) error {
 	log := ctx.Logger.With("eventlog", source.Name())
-	api := source.(eventlog.EventLog)
+	api, ok := source.(eventlog.EventLog)
+	if !ok {
+		return fmt.Errorf("could not convert source to event log: %v", source.Name())
+	}
 
 	// setup closing the API if either the run function is signaled asynchronously
 	// to shut down or when returning after io.EOF
@@ -99,17 +106,17 @@ func (eventlogRunner) Run(
 runLoop:
 	for {
 		if cancelCtx.Err() != nil {
-			return nil
+			return nil //nolint:nilerr // Intentionally ignoring context errors.
 		}
 
 		evtCheckpoint := initCheckpoint(log, cursor)
 		openErr := api.Open(evtCheckpoint)
 		if eventlog.IsRecoverable(openErr) {
 			log.Errorf("Encountered recoverable error when opening Windows Event Log: %v", openErr)
-			timed.Wait(cancelCtx, 5*time.Second)
+			timed.Wait(cancelCtx, 5*time.Second) //nolint:errcheck // Error can safely be ignored here.
 			continue
 		} else if openErr != nil {
-			return fmt.Errorf("failed to open windows event log: %v", openErr)
+			return fmt.Errorf("failed to open windows event log: %w", openErr)
 		}
 		log.Debugf("Windows Event Log '%s' opened successfully", source.Name())
 
@@ -123,24 +130,21 @@ runLoop:
 				}
 				continue runLoop
 			}
-			switch err {
-			case nil:
-				break
-			case io.EOF:
+			if errors.Is(err, io.EOF) {
 				log.Debugf("End of Winlog event stream reached: %v", err)
 				return nil
-			default:
+			} else if err != nil {
 				// only log error if we are not shutting down
 				if cancelCtx.Err() != nil {
-					return nil
+					return nil //nolint:nilerr // Intentionally ignoring context errors.
 				}
 
-				log.Errorf("Error occured while reading from Windows Event Log '%v': %v", source.Name(), err)
+				log.Errorf("Error occurred while reading from Windows Event Log '%v': %v", source.Name(), err)
 				return err
 			}
 
 			if len(records) == 0 {
-				timed.Wait(cancelCtx, time.Second)
+				timed.Wait(cancelCtx, time.Second) //nolint:errcheck // Error can safely be ignored here.
 				continue
 			}
 

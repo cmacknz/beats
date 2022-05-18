@@ -19,7 +19,7 @@ package dgram
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net"
 	"runtime"
 	"strings"
@@ -58,20 +58,24 @@ func DatagramReaderFactory(
 				length, addr, err := conn.ReadFrom(buffer)
 				if err != nil {
 					if family == inputsource.FamilyUnix {
-						fmt.Println("connection handler error", err)
+						logger.Errorf("connection handler error: %s", err)
 					}
 					// don't log any deadline events.
-					e, ok := err.(net.Error)
-					if ok && e.Timeout() {
-						continue
+					var netErr net.Error
+					if errors.As(err, &netErr) {
+						if netErr.Timeout() {
+							continue
+						}
 					}
 
 					// Closed network error string will never change in Go 1.X
 					// https://github.com/golang/go/issues/4373
-					opErr, ok := err.(*net.OpError)
-					if ok && strings.Contains(opErr.Err.Error(), "use of closed network connection") {
-						logger.Info("Connection has been closed")
-						return nil
+					var opErr *net.OpError
+					if errors.As(err, &opErr) {
+						if strings.Contains(opErr.Err.Error(), "use of closed network connection") {
+							logger.Info("Connection has been closed")
+							return nil
+						}
 					}
 
 					logger.Errorf("Error reading from the socket %s", err)
@@ -88,7 +92,7 @@ func DatagramReaderFactory(
 					callback(buffer[:length], inputsource.NetworkMetadata{RemoteAddr: addr})
 				}
 			}
-			fmt.Println("end of connection handling")
+			logger.Debug("end of connection handling")
 			return nil
 		})
 	}

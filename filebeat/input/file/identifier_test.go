@@ -21,7 +21,6 @@
 package file
 
 import (
-	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -179,7 +178,7 @@ func TestInodeMarkerIdentifier(t *testing.T) {
 		},
 	}
 
-	identifier := newMockInodeMarkerIdentifier()
+	identifier := newMockInodeMarkerIdentifier(t)
 	for name, test := range tests {
 		test := test
 		for i := 0; i < len(test.states); i++ {
@@ -192,9 +191,10 @@ func TestInodeMarkerIdentifier(t *testing.T) {
 	}
 }
 
-func newMockInodeMarkerIdentifier() StateIdentifier {
+func newMockInodeMarkerIdentifier(t *testing.T) StateIdentifier {
+	t.Helper()
 	cfg := conf.MustNewConfigFrom(map[string]string{"path": filepath.Join("testdata", "identifier_marker")})
 	i, err := newINodeMarkerIdentifier(cfg)
-	fmt.Println(err)
+	assert.NoError(t, err)
 	return i
 }

@@ -62,7 +62,7 @@ func NewInput(cfg *conf.C, outlet channel.Connector, context input.Context) (inp
 
 	p.harvester, err = p.createHarvester(file.State{Source: "-"})
 	if err != nil {
-		return nil, fmt.Errorf("Error initializing stdin harvester: %v", err)
+		return nil, fmt.Errorf("Error initializing stdin harvester: %w", err)
 	}
 
 	return p, nil

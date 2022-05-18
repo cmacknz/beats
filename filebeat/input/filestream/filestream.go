@@ -137,14 +137,14 @@ func (f *logFile) Read(buf []byte) (int, error) {
 
 func (f *logFile) startFileMonitoringIfNeeded() {
 	if f.closeInactive > 0 || f.closeRemoved || f.closeRenamed {
-		f.tg.Go(func(ctx context.Context) error {
+		f.tg.Go(func(ctx context.Context) error { //nolint:errcheck // Always returns nil
 			f.periodicStateCheck(ctx)
 			return nil
 		})
 	}
 
 	if f.closeAfterInterval > 0 {
-		f.tg.Go(func(ctx context.Context) error {
+		f.tg.Go(func(ctx context.Context) error { //nolint:errcheck // Always returns nil
 			f.closeIfTimeout(ctx)
 			return nil
 		})
@@ -158,7 +158,7 @@ func (f *logFile) closeIfTimeout(ctx unison.Canceler) {
 }
 
 func (f *logFile) periodicStateCheck(ctx unison.Canceler) {
-	timed.Periodic(ctx, f.checkInterval, func() error {
+	timed.Periodic(ctx, f.checkInterval, func() error { //nolint:errcheck // Always returns nil
 		if f.shouldBeClosed() {
 			f.readerCtx.Cancel()
 		}
@@ -221,7 +221,7 @@ func isSameFile(path string, info os.FileInfo) bool {
 // errorChecks determines the cause for EOF errors, and how the EOF event should be handled
 // based on the config options.
 func (f *logFile) errorChecks(err error) error {
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		f.log.Error("Unexpected state reading from %s; error: %s", f.file.Name(), err)
 		return err
 	}
@@ -256,6 +256,6 @@ func (f *logFile) handleEOF() error {
 func (f *logFile) Close() error {
 	f.readerCtx.Cancel()
 	err := f.file.Close()
-	f.tg.Stop() // Wait until all resources are released for sure.
+	f.tg.Stop() //nolint:errcheck // Wait until all resources are released for sure. Error is not fatal.
 	return err
 }

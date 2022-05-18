@@ -61,7 +61,7 @@ func newUpdateWriter(store *store, ch *updateChan) *updateWriter {
 		store: store,
 		ch:    ch,
 	}
-	w.tg.Go(func(ctx context.Context) error {
+	w.tg.Go(func(ctx context.Context) error { //nolint:errcheck // Always returns nil.
 		w.run(ctx)
 		return nil
 	})
@@ -72,7 +72,7 @@ func newUpdateWriter(store *store, ch *updateChan) *updateWriter {
 // Close stops the background writing provess and attempts to serialize
 // all pending operations.
 func (w *updateWriter) Close() {
-	w.tg.Stop()
+	w.tg.Stop() //nolint:errcheck // No way to report this error.
 	w.syncStates(w.ch.TryRecv())
 }
 

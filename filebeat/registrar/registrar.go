@@ -115,7 +115,7 @@ func (r *Registrar) Start() error {
 	// Load the previous log file locations now, for use in input
 	err := r.loadStates()
 	if err != nil {
-		return fmt.Errorf("error loading state: %v", err)
+		return fmt.Errorf("error loading state: %w", err)
 	}
 
 	r.wg.Add(1)
@@ -143,7 +143,9 @@ func (r *Registrar) Run() {
 	defer r.store.Close()
 
 	defer func() {
-		writeStates(r.store, r.states.GetStates())
+		if err := writeStates(r.store, r.states.GetStates()); err != nil {
+			r.log.Debugf("failed writing states to store: %s", err)
+		}
 	}()
 
 	var (
@@ -244,8 +246,11 @@ func (r *Registrar) gcStates() {
 
 	beforeCount := r.states.Count()
 	cleanedStates, pendingClean := r.states.CleanupWith(func(id string) {
-		// TODO: report error
-		r.store.Remove(fileStatePrefix + id)
+		key := fileStatePrefix + id
+		err := r.store.Remove(key)
+		if err != nil {
+			r.log.Debugf("Failed to remove key '%s' from store", key)
+		}
 	})
 	statesCleanup.Add(int64(cleanedStates))
 
@@ -282,7 +287,7 @@ func readStatesFrom(store *statestore.Store) ([]file.State, error) {
 			// XXX: Do we want to log here? In case we start to store other
 			// state types in the registry, then this operation will likely fail
 			// quite often, producing some false-positives in the logs...
-			return true, nil
+			return true, nil //nolint:nilerr // Intentionally ignoring error, see above.
 		}
 
 		st.Id = key[len(fileStatePrefix):]

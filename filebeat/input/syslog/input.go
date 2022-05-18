@@ -181,7 +181,9 @@ func GetCbByConfig(cfg config, forwarder *harvester.Forwarder, log *logp.Logger)
 	case syslogFormatRFC5424:
 		return func(data []byte, metadata inputsource.NetworkMetadata) {
 			ev := parseAndCreateEvent5424(data, metadata, cfg.Timezone.Location(), log)
-			forwarder.Send(ev)
+			if err := forwarder.Send(ev); err != nil {
+				log.Debugf("error forwarding event: %s", err)
+			}
 		}
 
 	case syslogFormatAuto:
@@ -192,7 +194,9 @@ func GetCbByConfig(cfg config, forwarder *harvester.Forwarder, log *logp.Logger)
 			} else {
 				ev = parseAndCreateEvent3164(data, metadata, cfg.Timezone.Location(), log)
 			}
-			forwarder.Send(ev)
+			if err := forwarder.Send(ev); err != nil {
+				log.Debugf("error forwarding event: %s", err)
+			}
 		}
 	case syslogFormatRFC3164:
 		break
@@ -200,7 +204,9 @@ func GetCbByConfig(cfg config, forwarder *harvester.Forwarder, log *logp.Logger)
 
 	return func(data []byte, metadata inputsource.NetworkMetadata) {
 		ev := parseAndCreateEvent3164(data, metadata, cfg.Timezone.Location(), log)
-		forwarder.Send(ev)
+		if err := forwarder.Send(ev); err != nil {
+			log.Debugf("error forwarding event: %s", err)
+		}
 	}
 }
 
@@ -312,7 +318,7 @@ func newBeatEvent(timestamp time.Time, metadata inputsource.NetworkMetadata, fie
 		Fields: fields,
 	}
 	if metadata.RemoteAddr != nil {
-		event.Fields.Put("log.source.address", metadata.RemoteAddr.String())
+		event.Fields.Put("log.source.address", metadata.RemoteAddr.String()) //nolint: errcheck // No way to report this error.
 	}
 	return event
 }

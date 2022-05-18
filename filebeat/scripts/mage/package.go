@@ -61,7 +61,7 @@ func CustomizePackaging() {
 			default:
 				panic(errors.Errorf("unhandled package type: %v", pkgType))
 			}
-			break
+			break //nolint:staticcheck // Intentionally only performing one iteration?
 		}
 	}
 }

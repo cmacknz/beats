@@ -190,7 +190,7 @@ func (h *Harvester) ID() uuid.UUID {
 func (h *Harvester) Setup() error {
 	err := h.open()
 	if err != nil {
-		return fmt.Errorf("Harvester setup failed. Unexpected file opening error: %s", err)
+		return fmt.Errorf("Harvester setup failed. Unexpected file opening error: %w", err)
 	}
 
 	h.reader, err = h.newLogFileReader()
@@ -198,7 +198,7 @@ func (h *Harvester) Setup() error {
 		if h.source != nil {
 			h.source.Close()
 		}
-		return fmt.Errorf("Harvester setup failed. Unexpected encoding line reader error: %s", err)
+		return fmt.Errorf("Harvester setup failed. Unexpected encoding line reader error: %w", err)
 	}
 
 	h.metrics = newHarvesterProgressMetrics(h.id.String())
@@ -324,24 +324,24 @@ func (h *Harvester) Run() error {
 
 		message, err := h.reader.Next()
 		if err != nil {
-			switch err {
-			case ErrFileTruncate:
+			if errors.Is(err, ErrFileTruncate) {
 				logger.Info("File was truncated. Begin reading file from offset 0.")
 				h.state.Offset = 0
 				filesTruncated.Add(1)
-			case ErrRemoved:
+			} else if errors.Is(err, ErrRemoved) {
 				logger.Info("File was removed. Closing because close_removed is enabled.")
-			case ErrRenamed:
+			} else if errors.Is(err, ErrRenamed) {
 				logger.Info("File was renamed. Closing because close_renamed is enabled.")
-			case ErrClosed:
+			} else if errors.Is(err, ErrClosed) {
 				logger.Info("Reader was closed. Closing.")
-			case io.EOF:
+			} else if errors.Is(err, io.EOF) {
 				logger.Info("End of file reached. Closing because close_eof is enabled.")
-			case ErrInactive:
+			} else if errors.Is(err, ErrInactive) {
 				logger.Infof("File is inactive. Closing because close_inactive of %v reached.", h.config.CloseInactive)
-			default:
+			} else {
 				logger.Errorf("Read line error: %v", err)
 			}
+
 			return nil
 		}
 
@@ -443,7 +443,7 @@ func (h *Harvester) onMessage(
 	// Check if json fields exist
 	var jsonFields mapstr.M
 	if f, ok := fields["json"]; ok {
-		jsonFields = f.(mapstr.M)
+		jsonFields, _ = f.(mapstr.M) // If jsonFields doesn't convert it won't pass he length check below.
 	}
 
 	var meta mapstr.M
@@ -461,7 +461,7 @@ func (h *Harvester) onMessage(
 				"_id": id,
 			}
 		}
-	} else if &text != nil {
+	} else if len(text) > 0 {
 		if fields == nil {
 			fields = mapstr.M{}
 		}
@@ -521,7 +521,7 @@ func (h *Harvester) shouldExportLine(line string) bool {
 func (h *Harvester) openFile() error {
 	fi, err := os.Stat(h.state.Source)
 	if err != nil {
-		return fmt.Errorf("failed to stat source file %s: %v", h.state.Source, err)
+		return fmt.Errorf("failed to stat source file %s: %w", h.state.Source, err)
 	}
 	if fi.Mode()&os.ModeNamedPipe != 0 {
 		return fmt.Errorf("failed to open file %s, named pipes are not supported", h.state.Source)
@@ -529,7 +529,7 @@ func (h *Harvester) openFile() error {
 
 	f, err := file_helper.ReadOpen(h.state.Source)
 	if err != nil {
-		return fmt.Errorf("Failed opening %s: %s", h.state.Source, err)
+		return fmt.Errorf("Failed opening %s: %w", h.state.Source, err)
 	}
 
 	harvesterOpenFiles.Add(1)
@@ -551,7 +551,7 @@ func (h *Harvester) validateFile(f *os.File) error {
 
 	info, err := f.Stat()
 	if err != nil {
-		return fmt.Errorf("Failed getting stats for file %s: %s", h.state.Source, err)
+		return fmt.Errorf("Failed getting stats for file %s: %w", h.state.Source, err)
 	}
 
 	if !info.Mode().IsRegular() {
@@ -566,10 +566,10 @@ func (h *Harvester) validateFile(f *os.File) error {
 	h.encoding, err = h.encodingFactory(f)
 	if err != nil {
 
-		if err == transform.ErrShortSrc {
+		if errors.Is(err, transform.ErrShortSrc) {
 			logger.Infof("Initialising encoding for '%v' failed due to file being too short", f)
 		} else {
-			logger.Errorf("Initialising encoding for '%v' failed: %v", f, err)
+			logger.Errorf("Initialising encoding for '%v' failed: %w", f, err)
 		}
 		return err
 	}
@@ -590,7 +590,7 @@ func (h *Harvester) initFileOffset(file *os.File) (int64, error) {
 	// continue from last known offset
 	if h.state.Offset > 0 {
 		h.logger.Debugf("Set previous offset: %d ", h.state.Offset)
-		return file.Seek(h.state.Offset, os.SEEK_SET)
+		return file.Seek(h.state.Offset, io.SeekStart)
 	}
 
 	// get offset from file in case of encoding factory was required to read some data.

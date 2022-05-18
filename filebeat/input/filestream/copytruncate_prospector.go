@@ -278,7 +278,7 @@ func (p *copyTruncateFileProspector) onFSEvent(
 	case loginp.OpTruncate:
 		log.Debugf("File %s has been truncated", event.NewPath)
 
-		updater.ResetCursor(src, state{Offset: 0})
+		updater.ResetCursor(src, state{Offset: 0}) //nolint:errcheck // Error intentionally ignored.
 		group.Restart(ctx, src)
 
 	case loginp.OpDelete:
@@ -299,7 +299,7 @@ func (p *copyTruncateFileProspector) onFSEvent(
 		p.fileProspector.onRename(log, ctx, event, src, updater, group)
 
 	default:
-		log.Error("Unkown return value %v", event.Op)
+		log.Error("Unknown return value %v", event.Op)
 	}
 }
 

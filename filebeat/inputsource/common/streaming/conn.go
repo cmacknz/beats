@@ -45,13 +45,13 @@ func NewResetableLimitedReader(reader io.Reader, maxReadBuffer uint64) *Resetabl
 }
 
 // Read reads the specified amount of byte
-func (m *ResetableLimitedReader) Read(p []byte) (n int, err error) {
+func (m *ResetableLimitedReader) Read(p []byte) (int, error) {
 	if m.byteRead >= m.maxReadBuffer {
 		return 0, ErrMaxReadBuffer
 	}
-	n, err = m.reader.Read(p)
+	n, err := m.reader.Read(p)
 	m.byteRead += uint64(n)
-	return
+	return n, err
 }
 
 // Reset resets the number of byte read
@@ -61,7 +61,7 @@ func (m *ResetableLimitedReader) Reset() {
 
 // IsMaxReadBufferErr returns true when the error is ErrMaxReadBuffer
 func IsMaxReadBufferErr(err error) bool {
-	return err == ErrMaxReadBuffer
+	return errors.Is(err, ErrMaxReadBuffer)
 }
 
 // DeadlineReader allow read to a io.Reader to timeout, the timeout is refreshed on every read.
@@ -85,5 +85,5 @@ func (d *DeadlineReader) Read(p []byte) (n int, err error) {
 }
 
 func (d *DeadlineReader) refresh() {
-	d.conn.SetDeadline(time.Now().Add(d.timeout))
+	d.conn.SetDeadline(time.Now().Add(d.timeout)) //nolint:errcheck // No way to report this error.
 }

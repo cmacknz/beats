@@ -49,7 +49,7 @@ const (
 )
 
 // validModuleNames to sanitize user input
-var validModuleNames = regexp.MustCompile("[^a-zA-Z0-9\\_\\-]+") //nolint:gosimple // String escapes are fine here.
+var validModuleNames = regexp.MustCompile("[^a-zA-Z0-9\\_\\-]+")
 
 type logHints struct {
 	config   *config

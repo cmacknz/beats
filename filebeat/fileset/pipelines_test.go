@@ -90,7 +90,8 @@ func TestLoadPipelinesWithMultiPipelineFileset(t *testing.T) {
 			}
 
 			testESServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte("{\"version\":{\"number\":\"" + test.esVersion + "\"}}"))
+				_, err := w.Write([]byte("{\"version\":{\"number\":\"" + test.esVersion + "\"}}"))
+				assert.NoError(t, err)
 			}))
 			defer testESServer.Close()
 

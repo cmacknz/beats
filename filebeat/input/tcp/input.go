@@ -71,7 +71,7 @@ func NewInput(
 
 	cb := func(data []byte, metadata inputsource.NetworkMetadata) {
 		event := createEvent(data, metadata)
-		forwarder.Send(event)
+		forwarder.Send(event) //nolint: errcheck // No way to handle this error.
 	}
 
 	splitFunc, err := streaming.SplitFunc(config.Framing, []byte(config.LineDelimiter))

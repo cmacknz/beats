@@ -39,7 +39,7 @@ func TestPublish(t *testing.T) {
 			PublishFunc: func(event beat.Event) { actual = event },
 		}
 		publisher := cursorPublisher{nil, client, &cursor}
-		publisher.Publish(beat.Event{}, "test")
+		assert.NoError(t, publisher.Publish(beat.Event{}, "test"))
 
 		require.NotNil(t, actual.Private)
 	})
@@ -54,7 +54,7 @@ func TestPublish(t *testing.T) {
 			PublishFunc: func(event beat.Event) { actual = event },
 		}
 		publisher := cursorPublisher{nil, client, &cursor}
-		publisher.Publish(beat.Event{}, nil)
+		assert.NoError(t, publisher.Publish(beat.Event{}, nil))
 		require.Nil(t, actual.Private)
 	})
 

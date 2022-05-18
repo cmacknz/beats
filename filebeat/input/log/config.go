@@ -105,7 +105,7 @@ var ValidScanOrder = map[string]struct{}{
 	ScanOrderDesc: {},
 }
 
-// ValidScanOrder of valid scan orders
+// ValidScanSort of valid scan orders
 var ValidScanSort = map[string]struct{}{
 	ScanSortNone:     {},
 	ScanSortModtime:  {},
@@ -222,11 +222,11 @@ func (c *config) resolveRecursiveGlobs() error {
 
 // normalizeGlobPatterns calls `filepath.Abs` on all the globs from config
 func (c *config) normalizeGlobPatterns() error {
-	var paths []string
+	paths := make([]string, 0, len(c.Paths))
 	for _, path := range c.Paths {
 		pathAbs, err := filepath.Abs(path)
 		if err != nil {
-			return fmt.Errorf("Failed to get the absolute path for %s: %v", path, err)
+			return fmt.Errorf("Failed to get the absolute path for %s: %w", path, err)
 		}
 		paths = append(paths, pathAbs)
 	}

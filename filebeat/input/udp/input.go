@@ -65,7 +65,7 @@ func NewInput(
 
 	forwarder := harvester.NewForwarder(out)
 	callback := func(data []byte, metadata inputsource.NetworkMetadata) {
-		forwarder.Send(beat.Event{
+		forwarder.Send(beat.Event{ //nolint:errcheck // No way to report errors here.
 			Timestamp: time.Now(),
 			Meta: mapstr.M{
 				"truncated": metadata.Truncated,

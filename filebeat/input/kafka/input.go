@@ -165,7 +165,7 @@ func (input *kafkaInput) Run(ctx input.Context, pipeline beat.Pipeline) error {
 		input.runConsumerGroup(log, client, goContext, consumerGroup)
 	}
 
-	if ctx.Cancelation.Err() == context.Canceled {
+	if errors.Is(ctx.Cancelation.Err(), context.Canceled) {
 		return nil
 	} else {
 		return ctx.Cancelation.Err()
@@ -253,8 +253,8 @@ func doneChannelContext(ctx input.Context) context.Context {
 	return channelCtx{ctx}
 }
 
-func (c channelCtx) Deadline() (deadline time.Time, ok bool) {
-	return
+func (c channelCtx) Deadline() (time.Time, bool) {
+	return time.Time{}, false
 }
 
 func (c channelCtx) Done() <-chan struct{} {
@@ -311,7 +311,7 @@ func (h *groupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim s
 	parser := h.parsers.Create(reader)
 	for h.session.Context().Err() == nil {
 		message, err := parser.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return nil
 		}
 		if err != nil {

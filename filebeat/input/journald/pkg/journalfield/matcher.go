@@ -148,19 +148,19 @@ func ApplyUnitMatchers(j journal, units []string) error {
 	for _, unit := range units {
 		systemdUnit, err := BuildMatcher("systemd.unit=" + unit)
 		if err != nil {
-			return fmt.Errorf("failed to build matcher for _SYSTEMD_UNIT: %+w", err)
+			return fmt.Errorf("failed to build matcher for _SYSTEMD_UNIT: %w", err)
 		}
 		coredumpUnit, err := BuildMatcher("journald.coredump.unit=" + unit)
 		if err != nil {
-			return fmt.Errorf("failed to build matcher for COREDUMP_UNIT: %+w", err)
+			return fmt.Errorf("failed to build matcher for COREDUMP_UNIT: %w", err)
 		}
 		journaldUnit, err := BuildMatcher("journald.unit=" + unit)
 		if err != nil {
-			return fmt.Errorf("failed to build matcher for UNIT: %+w", err)
+			return fmt.Errorf("failed to build matcher for UNIT: %w", err)
 		}
 		journaldObjectUnit, err := BuildMatcher("journald.object.systemd.unit=" + unit)
 		if err != nil {
-			return fmt.Errorf("failed to build matcher for OBJECT_SYSTEMD_UNIT: %+w", err)
+			return fmt.Errorf("failed to build matcher for OBJECT_SYSTEMD_UNIT: %w", err)
 		}
 
 		matchers := [][]Matcher{
@@ -193,7 +193,7 @@ func ApplyUnitMatchers(j journal, units []string) error {
 
 		for _, m := range matchers {
 			if err := ApplyMatchersOr(j, m); err != nil {
-				return fmt.Errorf("error while setting up unit matcher for %s: %+v", unit, err)
+				return fmt.Errorf("error while setting up unit matcher for %s: %w", unit, err)
 			}
 		}
 
@@ -217,7 +217,7 @@ func ApplyTransportMatcher(j journal, transports []string) error {
 		transportMatchers[i] = transportMatcher
 	}
 	if err := ApplyMatchersOr(j, transportMatchers); err != nil {
-		return fmt.Errorf("error while adding %+v transport to matchers: %+v", transports, err)
+		return fmt.Errorf("error while adding %+v transport to matchers: %w", transports, err)
 	}
 	return nil
 }

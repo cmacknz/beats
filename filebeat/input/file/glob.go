@@ -62,7 +62,7 @@ func GlobPatterns(pattern string, doubleStarPatternDepth uint8) ([]string, error
 	if len(wildcardList) == 0 {
 		return []string{pattern}, nil
 	}
-	var patterns []string
+	patterns := make([]string, 0, len(wildcardList))
 	for _, w := range wildcardList {
 		patterns = append(patterns, filepath.Join(prefix, w, suffix))
 	}

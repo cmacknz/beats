@@ -106,7 +106,9 @@ func newInputACKHandler(ch *updateChan, log *logp.Logger) beat.ACKer {
 			return
 		}
 
-		op := private[last].(*updateOp)
-		ch.Send(scheduledUpdate{op: op, n: n})
+		op, ok := private[last].(*updateOp)
+		if ok {
+			ch.Send(scheduledUpdate{op: op, n: n})
+		}
 	})
 }

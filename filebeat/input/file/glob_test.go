@@ -34,7 +34,9 @@ func TestGlob(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.MkdirAll(filepath.Join(root, "foo/bar/baz/qux/quux"), 0o755)
+	if err := os.MkdirAll(filepath.Join(root, "foo/bar/baz/qux/quux"), 0o755); err != nil {
+		t.Fatalf("Error creating directory: %v", err)
+	}
 	for _, test := range globTests {
 		pattern := filepath.Join(root, test.pattern)
 		matches, err := Glob(pattern, 4)

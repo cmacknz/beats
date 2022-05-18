@@ -18,6 +18,7 @@
 package log
 
 import (
+	"errors"
 	"io"
 	"os"
 	"time"
@@ -116,7 +117,7 @@ func (f *Log) Read(buf []byte) (int, error) {
 // errorChecks determines the cause for EOF errors, and how the EOF event should be handled
 // based on the config options.
 func (f *Log) errorChecks(err error) error {
-	if err != io.EOF {
+	if errors.Is(err, io.EOF) {
 		f.logger.Errorf("Unexpected state reading from %s; error: %s", f.fs.Name(), err)
 		return err
 	}

@@ -50,10 +50,10 @@ func TestReadLine(t *testing.T) {
 	}
 
 	file, err := os.Create(logFile)
-	defer file.Close()
+	if assert.NoError(t, err) {
+		defer file.Close()
+	}
 	defer os.Remove(logFile)
-
-	assert.NoError(t, err)
 	assert.NotNil(t, file)
 
 	firstLineString := "9Characte\n"
@@ -67,12 +67,13 @@ func TestReadLine(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, length)
 
-	file.Sync()
+	assert.NoError(t, file.Sync())
 
 	// Open file for reading
 	readFile, err := os.Open(logFile)
-	defer readFile.Close()
-	assert.NoError(t, err)
+	if assert.NoError(t, err) {
+		defer readFile.Close()
+	}
 
 	source := File{File: readFile}
 
@@ -132,7 +133,7 @@ func readLine(reader reader.Reader) (time.Time, string, int, mapstr.M, error) {
 
 	// Full line read to be returned
 	if message.Bytes != 0 && err == nil {
-		return message.Ts, string(message.Content), message.Bytes, message.Fields, err
+		return message.Ts, string(message.Content), message.Bytes, message.Fields, nil
 	}
 
 	return time.Time{}, "", 0, nil, err

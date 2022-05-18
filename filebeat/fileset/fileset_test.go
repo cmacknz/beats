@@ -127,7 +127,8 @@ func TestEvaluateVarsMySQL(t *testing.T) {
 	vars, err := fs.evaluateVars(makeTestInfo("6.6.0"))
 	require.NoError(t, err)
 
-	builtin := vars["builtin"].(map[string]interface{})
+	builtin, ok := vars["builtin"].(map[string]interface{})
+	assert.True(t, ok, "Failed type assertion for builtin")
 	assert.IsType(t, "a-mac-with-esc-key", builtin["hostname"])
 	assert.IsType(t, "local", builtin["domain"])
 

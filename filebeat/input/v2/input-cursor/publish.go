@@ -18,6 +18,7 @@
 package cursor
 
 import (
+	"fmt"
 	"time"
 
 	input "github.com/elastic/beats/v7/filebeat/input/v2"
@@ -94,12 +95,14 @@ func createUpdateOp(store *store, resource *resource, updates interface{}) (*upd
 	cursor := resource.pendingCursor
 	if resource.activeCursorOperations == 0 {
 		var tmp interface{}
-		typeconv.Convert(&tmp, cursor)
+		if err := typeconv.Convert(&tmp, cursor); err != nil {
+			return nil, fmt.Errorf("failed to convert cursor: %w", err)
+		}
 		resource.pendingCursor = tmp
 		cursor = tmp
 	}
 	if err := typeconv.Convert(&cursor, updates); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert cursor update: %w", err)
 	}
 	resource.pendingCursor = cursor
 
@@ -133,7 +136,9 @@ func (op *updateOp) Execute(n uint) {
 		resource.cursor = resource.pendingCursor
 		resource.pendingCursor = nil
 	} else {
-		typeconv.Convert(&resource.cursor, op.delta)
+		if err := typeconv.Convert(&resource.cursor, op.delta); err != nil {
+			op.store.log.Errorf("Failed to convert cursor state: %s", err)
+		}
 	}
 
 	if resource.internalState.Updated.Before(op.timestamp) {

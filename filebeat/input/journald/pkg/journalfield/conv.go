@@ -192,9 +192,6 @@ func putStringIfNotEmtpy(k, v string, fields mapstr.M) {
 	_, _ = fields.Put(k, v)
 }
 
-// helpers for creating a field conversion table.
-var ignoredField = Conversion{Dropped: true}
-
 func text(names ...string) Conversion {
 	return Conversion{Names: names, IsInteger: false, Dropped: false}
 }

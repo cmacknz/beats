@@ -62,7 +62,7 @@ func newLogsPathMatcher(cfg conf.C) (add_kubernetes_metadata.Matcher, error) {
 
 	err := cfg.Unpack(&config)
 	if err != nil || config.LogsPath == "" {
-		return nil, fmt.Errorf("fail to unpack the `logs_path` configuration: %s", err)
+		return nil, fmt.Errorf("fail to unpack the `logs_path` configuration: %w", err)
 	}
 
 	logPath := config.LogsPath
@@ -88,7 +88,12 @@ func (f *LogPathMatcher) MetadataIndex(event mapstr.M) string {
 		return ""
 	}
 
-	source := value.(string)
+	source, ok := value.(string)
+	if !ok {
+		f.logger.Errorf("failed to convert log file path to string: %v", value)
+		return ""
+	}
+
 	f.logger.Debugf("Incoming log.file.path value: %s", source)
 
 	if !strings.Contains(source, f.LogsPath) {
@@ -102,7 +107,7 @@ func (f *LogPathMatcher) MetadataIndex(event mapstr.M) string {
 	if f.ResourceType == "pod" {
 		// Pod resource type will extract only the pod UID, which offers less granularity of metadata when compared to the container ID
 		if strings.Contains(source, ".log") && !strings.HasSuffix(source, ".gz") {
-			// Specify a pod resource type when writting logs into manually mounted log volume,
+			// Specify a pod resource type when writing logs into manually mounted log volume,
 			// those logs apper under under "/var/lib/kubelet/pods/<pod_id>/volumes/..."
 			if strings.HasPrefix(f.LogsPath, podKubeletLogsPath()) {
 				pathDirs := strings.Split(source, pathSeparator)

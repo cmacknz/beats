@@ -203,7 +203,10 @@ func getSemanticElementsFromPatterns(patterns []string) ([]field, error) {
 func accumulatePatterns(grok interface{}) ([]string, error) {
 	for k, v := range grok.(map[string]interface{}) {
 		if k == "patterns" {
-			vs := v.([]interface{})
+			vs, ok := v.([]interface{})
+			if !ok {
+				return nil, fmt.Errorf("failed to convert pattern: %v", v)
+			}
 			var p []string
 			for _, s := range vs {
 				p = append(p, s.(string))
@@ -221,12 +224,13 @@ func accumulateRemoveFields(remove interface{}, out []string) []string {
 			case string:
 				return append(out, vs)
 			case []string:
-				for _, vv := range vs {
-					out = append(out, vv)
-				}
+				out = append(out, vs...)
 			case []interface{}:
 				for _, vv := range vs {
-					vvs := vv.(string)
+					vvs, ok := vv.(string)
+					if !ok {
+						continue
+					}
 					out = append(out, vvs)
 				}
 			default:
@@ -240,15 +244,18 @@ func accumulateRemoveFields(remove interface{}, out []string) []string {
 
 func accumulateRenameFields(rename interface{}, out map[string]string) map[string]string {
 	var from, to string
+	var fromOK, toOK bool
 	for k, v := range rename.(map[string]interface{}) {
 		if k == "field" {
-			from = v.(string)
+			from, fromOK = v.(string)
 		}
 		if k == "target_field" {
-			to = v.(string)
+			to, toOK = v.(string)
 		}
 	}
-	out[from] = to
+	if fromOK && toOK {
+		out[from] = to
+	}
 	return out
 }
 

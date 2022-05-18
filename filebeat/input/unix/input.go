@@ -76,7 +76,7 @@ func (s *server) Run(ctx input.Context, publisher stateless.Publisher) error {
 	log.Info("Starting Unix socket input")
 	defer log.Info("Unix socket input stopped")
 
-	cb := inputsource.NetworkFunc(func(data []byte, metadata inputsource.NetworkMetadata) {
+	cb := inputsource.NetworkFunc(func(data []byte, metadata inputsource.NetworkMetadata) { //nolint:unconvert // Not clear what conversion unconvert is complaining about.
 		event := createEvent(data, metadata)
 		publisher.Publish(event)
 	})

@@ -26,7 +26,6 @@ import (
 	"time"
 
 	input "github.com/elastic/beats/v7/filebeat/input/v2"
-	v2 "github.com/elastic/beats/v7/filebeat/input/v2"
 	"github.com/elastic/beats/v7/libbeat/beat"
 	"github.com/elastic/elastic-agent-libs/logp"
 	"github.com/elastic/go-concert/ctxtool"
@@ -73,7 +72,7 @@ func newReaderGroupWithLimit(limit uint64) *readerGroup {
 // function is nil in that case and must not be called.
 //
 // The context will be automatically cancelled once the ID is removed from the group. Calling `cancel` is optional.
-func (r *readerGroup) newContext(id string, cancelation v2.Canceler) (context.Context, context.CancelFunc, error) {
+func (r *readerGroup) newContext(id string, cancelation input.Canceler) (context.Context, context.CancelFunc, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -144,7 +143,7 @@ func (hg *defaultHarvesterGroup) Start(ctx input.Context, s Source) {
 	ctx.Logger = ctx.Logger.With("source_file", sourceName)
 	ctx.Logger.Debug("Starting harvester for file")
 
-	hg.tg.Go(startHarvester(ctx, hg, s, false))
+	hg.tg.Go(startHarvester(ctx, hg, s, false)) //nolint:errcheck // No way to report this error.
 }
 
 // Restart starts the Harvester for a Source if a Harvester is already running it waits for it
@@ -155,7 +154,7 @@ func (hg *defaultHarvesterGroup) Restart(ctx input.Context, s Source) {
 	ctx.Logger = ctx.Logger.With("source_file", sourceName)
 	ctx.Logger.Debug("Restarting harvester for file")
 
-	hg.tg.Go(startHarvester(ctx, hg, s, true))
+	hg.tg.Go(startHarvester(ctx, hg, s, true)) //nolint:errcheck // No way to report this error.
 }
 
 func startHarvester(ctx input.Context, hg *defaultHarvesterGroup, s Source, restart bool) func(context.Context) error {
@@ -205,14 +204,14 @@ func startHarvester(ctx input.Context, hg *defaultHarvesterGroup, s Source, rest
 		publisher := &cursorPublisher{canceler: ctx.Cancelation, client: client, cursor: &cursor}
 
 		err = hg.harvester.Run(ctx, s, cursor, publisher)
-		if err != nil && err != context.Canceled {
+		if err != nil && errors.Is(err, context.Canceled) {
 			hg.readers.remove(srcID)
-			return fmt.Errorf("error while running harvester: %v", err)
+			return fmt.Errorf("error while running harvester: %w", err)
 		}
 		// If the context was not cancelled it means that the Harvester is stopping because of
 		// some internal decision, not due to outside interaction.
 		// If it is stopping itself, it must clean up the bookkeeper.
-		if ctx.Cancelation.Err() != context.Canceled {
+		if !errors.Is(ctx.Cancelation.Err(), context.Canceled) {
 			hg.readers.remove(srcID)
 		}
 
@@ -226,14 +225,14 @@ func (hg *defaultHarvesterGroup) Continue(ctx input.Context, previous, next Sour
 	prevID := hg.identifier.ID(previous)
 	nextID := hg.identifier.ID(next)
 
-	hg.tg.Go(func(canceler context.Context) error {
+	hg.tg.Go(func(canceler context.Context) error { //nolint:errcheck // No way to report this error.
 		previousResource, err := lock(ctx, hg.store, prevID)
 		if err != nil {
 			return fmt.Errorf("error while locking previous resource: %w", err)
 		}
 		// mark previous state out of date
 		// so when reading starts again the offset is set to zero
-		hg.store.remove(prevID)
+		hg.store.remove(prevID) //nolint:errcheck // No way to report this error.
 
 		nextResource, err := lock(ctx, hg.store, nextID)
 		if err != nil {
@@ -252,7 +251,7 @@ func (hg *defaultHarvesterGroup) Continue(ctx input.Context, previous, next Sour
 
 // Stop stops the running Harvester for a given Source.
 func (hg *defaultHarvesterGroup) Stop(s Source) {
-	hg.tg.Go(func(_ context.Context) error {
+	hg.tg.Go(func(_ context.Context) error { //nolint:errcheck // No way to report this error.
 		hg.readers.remove(hg.identifier.ID(s))
 		return nil
 	})

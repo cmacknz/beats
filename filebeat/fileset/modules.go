@@ -123,7 +123,7 @@ func NewModuleRegistry(moduleConfigs []*conf.C, beatInfo beat.Info, init bool) (
 	if err != nil || !stat.IsDir() {
 		log := logp.NewLogger(logName)
 		log.Errorf("Not loading modules. Module directory not found: %s", modulesPath)
-		return &ModuleRegistry{log: log}, nil // empty registry, no error
+		return &ModuleRegistry{log: log}, nil //nolint:nilerr // empty registry, no error
 	}
 
 	var modulesCLIList []string
@@ -134,7 +134,7 @@ func NewModuleRegistry(moduleConfigs []*conf.C, beatInfo beat.Info, init bool) (
 			return nil, err
 		}
 	}
-	var mcfgs []*ModuleConfig
+	mcfgs := make([]*ModuleConfig, 0, len(moduleConfigs))
 	for _, cfg := range moduleConfigs {
 		cfg, err = mergePathDefaults(cfg)
 		if err != nil {
@@ -203,7 +203,7 @@ func mcfgFromConfig(cfg *conf.C) (*ModuleConfig, error) {
 			continue
 		}
 
-		filesetConfig, _ := dict[name] // Nil config if name is not present.
+		filesetConfig := dict[name] // Nil config if name is not present.
 
 		tmpCfg, err := conf.NewConfigFrom(filesetConfig)
 		if err != nil {
@@ -421,7 +421,7 @@ func (reg *ModuleRegistry) Empty() bool {
 
 // ModuleNames returns the names of modules in the ModuleRegistry.
 func (reg *ModuleRegistry) ModuleNames() []string {
-	var modules []string
+	modules := make([]string, 0, len(reg.registry))
 	for _, m := range reg.registry {
 		modules = append(modules, m.config.Module)
 	}

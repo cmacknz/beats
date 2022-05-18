@@ -19,6 +19,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -136,7 +137,7 @@ func getLogsFromFile(logfile string, conf *logReaderConfig) ([]string, error) {
 
 	enc, err := encFactory(f)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize encoding: %v", err)
+		return nil, fmt.Errorf("failed to initialize encoding: %w", err)
 	}
 
 	var r reader.Reader
@@ -178,7 +179,7 @@ func getLogsFromFile(logfile string, conf *logReaderConfig) ([]string, error) {
 		logs = append(logs, string(msg.Content))
 	}
 
-	return logs, nil
+	return logs, err
 }
 
 func getPipelinePath(path, modulesPath string) ([]string, error) {
@@ -201,7 +202,7 @@ func getPipelinePath(path, modulesPath string) ([]string, error) {
 			}
 		}
 		if err != nil {
-			return nil, fmt.Errorf("Cannot find pipeline in %s: %v %v\n", path, err, pathToPipeline)
+			return nil, fmt.Errorf("Cannot find pipeline in %s: %w %v\n", path, err, pathToPipeline)
 		}
 		return []string{pathToPipeline}, nil
 	}
@@ -242,17 +243,17 @@ func isPipelineFileExtension(path string) bool {
 func testPipeline(esURL, path string, logs []string, verbose, simulateVerbose bool) error {
 	pipeline, err := readPipeline(path)
 	if err != nil {
-		return fmt.Errorf("Error while reading pipeline: %v\n", err)
+		return fmt.Errorf("Error while reading pipeline: %w\n", err)
 	}
 
 	resp, err := runSimulate(esURL, pipeline, logs, simulateVerbose)
 	if err != nil {
-		return fmt.Errorf("Error while sending request to Elasticsearch: %v\n", err)
+		return fmt.Errorf("Error while sending request to Elasticsearch: %w\n", err)
 	}
 
 	err = showResp(resp, verbose, simulateVerbose)
 	if err != nil {
-		return fmt.Errorf("Error while reading response from Elasticsearch: %v\n", err)
+		return fmt.Errorf("Error while reading response from Elasticsearch: %w\n", err)
 	}
 	return nil
 }
@@ -273,7 +274,7 @@ func readPipeline(path string) (map[string]interface{}, error) {
 }
 
 func runSimulate(url string, pipeline map[string]interface{}, logs []string, verbose bool) (*http.Response, error) {
-	var sources []mapstr.M
+	sources := make([]mapstr.M, 0, len(logs))
 	now := time.Now().UTC()
 	for _, l := range logs {
 		s := mapstr.M{
@@ -283,7 +284,7 @@ func runSimulate(url string, pipeline map[string]interface{}, logs []string, ver
 		sources = append(sources, s)
 	}
 
-	var docs []mapstr.M
+	docs := make([]mapstr.M, 0, len(sources))
 	for _, s := range sources {
 		d := mapstr.M{
 			"_index":  "index",
@@ -307,7 +308,15 @@ func runSimulate(url string, pipeline map[string]interface{}, logs []string, ver
 		simulateURL += "?verbose"
 	}
 
-	return client.Post(simulateURL, "application/json", strings.NewReader(payload))
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "POST", simulateURL, strings.NewReader(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return client.Do(req)
 }
 
 func showResp(resp *http.Response, verbose, simulateVerbose bool) error {
@@ -316,7 +325,10 @@ func showResp(resp *http.Response, verbose, simulateVerbose bool) error {
 	}
 
 	b := new(bytes.Buffer)
-	b.ReadFrom(resp.Body)
+	if _, err := b.ReadFrom(resp.Body); err != nil {
+		return err
+	}
+
 	var r mapstr.M
 	err := json.Unmarshal(b.Bytes(), &r)
 	if err != nil {
@@ -324,7 +336,7 @@ func showResp(resp *http.Response, verbose, simulateVerbose bool) error {
 	}
 
 	if verbose {
-		fmt.Println(r.StringToPrint())
+		fmt.Println(r.StringToPrint()) //nolint:forbidigo // Println() is ok in test code.
 	} else {
 		docErrors, err := getDocErrors(r, simulateVerbose)
 		if err != nil {
@@ -332,7 +344,7 @@ func showResp(resp *http.Response, verbose, simulateVerbose bool) error {
 		}
 
 		for _, d := range docErrors {
-			fmt.Println(d.StringToPrint())
+			fmt.Println(d.StringToPrint()) //nolint:forbidigo // Println() is ok in test code.
 		}
 	}
 	return nil
@@ -344,7 +356,7 @@ func getDocErrors(r mapstr.M, simulateVerbose bool) ([]mapstr.M, error) {
 		return nil, err
 	}
 
-	docs := d.([]interface{})
+	docs, _ := d.([]interface{})
 	if simulateVerbose {
 		return getErrorsSimulateVerbose(docs)
 	}
@@ -355,7 +367,7 @@ func getDocErrors(r mapstr.M, simulateVerbose bool) ([]mapstr.M, error) {
 func getRegularErrors(docs []interface{}) ([]mapstr.M, error) {
 	var errors []mapstr.M
 	for _, d := range docs {
-		dd := d.(map[string]interface{})
+		dd, _ := d.(map[string]interface{})
 		doc := mapstr.M(dd)
 		hasError, err := doc.HasKey("doc._source.error")
 		if err != nil {
@@ -372,17 +384,17 @@ func getRegularErrors(docs []interface{}) ([]mapstr.M, error) {
 func getErrorsSimulateVerbose(docs []interface{}) ([]mapstr.M, error) {
 	var errors []mapstr.M
 	for _, d := range docs {
-		pr := d.(map[string]interface{})
+		pr, _ := d.(map[string]interface{})
 		p := mapstr.M(pr)
 
 		rr, err := p.GetValue("processor_results")
 		if err != nil {
 			return nil, err
 		}
-		res := rr.([]interface{})
-		hasError := false
+		res, _ := rr.([]interface{})
+		var hasError bool
 		for _, r := range res {
-			rres := r.(map[string]interface{})
+			rres, _ := r.(map[string]interface{})
 			result := mapstr.M(rres)
 			hasError, _ = result.HasKey("error")
 			if hasError {

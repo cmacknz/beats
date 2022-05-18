@@ -29,7 +29,7 @@ import (
 var setupLoggingOnce sync.Once
 
 type loggerWrapper struct {
-	log *logp.Logger
+	log *logp.Logger //nolint:structcheck // log is used setupLibraryLogging() below.
 }
 
 type (
