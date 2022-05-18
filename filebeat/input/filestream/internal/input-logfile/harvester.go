@@ -165,7 +165,7 @@ func startHarvester(ctx input.Context, hg *defaultHarvesterGroup, s Source, rest
 		defer func() {
 			if v := recover(); v != nil {
 				err := fmt.Errorf("harvester panic with: %+v\n%s", v, debug.Stack())
-				ctx.Logger.Errorf("Harvester crashed with: %+v", err)
+				ctx.Logger.Errorf("Harvester crashed with: %w", err)
 				hg.readers.remove(srcID)
 			}
 		}()
@@ -178,7 +178,7 @@ func startHarvester(ctx input.Context, hg *defaultHarvesterGroup, s Source, rest
 
 		harvesterCtx, cancelHarvester, err := hg.readers.newContext(srcID, canceler)
 		if err != nil {
-			return fmt.Errorf("error while adding new reader to the bookkeeper %v", err)
+			return fmt.Errorf("error while adding new reader to the bookkeeper %w", err)
 		}
 		ctx.Cancelation = harvesterCtx
 		defer cancelHarvester()
@@ -186,7 +186,7 @@ func startHarvester(ctx input.Context, hg *defaultHarvesterGroup, s Source, rest
 		resource, err := lock(ctx, hg.store, srcID)
 		if err != nil {
 			hg.readers.remove(srcID)
-			return fmt.Errorf("error while locking resource: %v", err)
+			return fmt.Errorf("error while locking resource: %w", err)
 		}
 		defer releaseResource(resource)
 
@@ -196,7 +196,7 @@ func startHarvester(ctx input.Context, hg *defaultHarvesterGroup, s Source, rest
 		})
 		if err != nil {
 			hg.readers.remove(srcID)
-			return fmt.Errorf("error while connecting to output with pipeline: %v", err)
+			return fmt.Errorf("error while connecting to output with pipeline: %w", err)
 		}
 		defer client.Close()
 
@@ -229,7 +229,7 @@ func (hg *defaultHarvesterGroup) Continue(ctx input.Context, previous, next Sour
 	hg.tg.Go(func(canceler context.Context) error {
 		previousResource, err := lock(ctx, hg.store, prevID)
 		if err != nil {
-			return fmt.Errorf("error while locking previous resource: %v", err)
+			return fmt.Errorf("error while locking previous resource: %w", err)
 		}
 		// mark previous state out of date
 		// so when reading starts again the offset is set to zero
@@ -237,7 +237,7 @@ func (hg *defaultHarvesterGroup) Continue(ctx input.Context, previous, next Sour
 
 		nextResource, err := lock(ctx, hg.store, nextID)
 		if err != nil {
-			return fmt.Errorf("error while locking next resource: %v", err)
+			return fmt.Errorf("error while locking next resource: %w", err)
 		}
 		hg.store.UpdateTTL(nextResource, hg.cleanTimeout)
 

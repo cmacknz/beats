@@ -83,17 +83,17 @@ func Generate(beatsPath, module, fileset string, noDoc bool) error {
 	filesetPath := filepath.Join(beatsPath, "module", module, fileset)
 	p, err := readPipeline(filesetPath)
 	if err != nil {
-		return fmt.Errorf("cannot read pipeline: %+v", err)
+		return fmt.Errorf("cannot read pipeline: %w", err)
 	}
 
 	data, err := p.toFieldsYml(noDoc)
 	if err != nil {
-		return fmt.Errorf("cannot generate fields.yml: %+v", err)
+		return fmt.Errorf("cannot generate fields.yml: %w", err)
 	}
 
 	err = writeFieldsYml(filesetPath, data)
 	if err != nil {
-		return fmt.Errorf("cannot write field.yml: %+v", err)
+		return fmt.Errorf("cannot write field.yml: %w", err)
 	}
 	return nil
 }

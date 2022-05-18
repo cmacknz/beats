@@ -109,7 +109,7 @@ func (m Matcher) Apply(j journal) error {
 
 	err := j.AddMatch(m.str)
 	if err != nil {
-		return fmt.Errorf("error adding match '%s' to journal: %v", m.str, err)
+		return fmt.Errorf("error adding match '%s' to journal: %w", m.str, err)
 	}
 	return nil
 }
@@ -134,7 +134,7 @@ func ApplyMatchersOr(j journal, matchers []Matcher) error {
 		}
 
 		if err := j.AddDisjunction(); err != nil {
-			return fmt.Errorf("error adding disjunction to journal: %v", err)
+			return fmt.Errorf("error adding disjunction to journal: %w", err)
 		}
 	}
 
@@ -239,7 +239,7 @@ func ApplyIncludeMatches(j journal, m IncludeMatches) error {
 			return err
 		}
 		if err := j.AddDisjunction(); err != nil {
-			return fmt.Errorf("error adding disjunction to journal: %v", err)
+			return fmt.Errorf("error adding disjunction to journal: %w", err)
 		}
 	}
 
@@ -248,13 +248,13 @@ func ApplyIncludeMatches(j journal, m IncludeMatches) error {
 			return err
 		}
 		if err := j.AddConjunction(); err != nil {
-			return fmt.Errorf("error adding conjunction to journal: %v", err)
+			return fmt.Errorf("error adding conjunction to journal: %w", err)
 		}
 	}
 
 	for _, match := range m.Matches {
 		if err := match.Apply(j); err != nil {
-			return fmt.Errorf("failed to apply %s expression: %+v", match.str, err)
+			return fmt.Errorf("failed to apply %s expression: %w", match.str, err)
 		}
 	}
 

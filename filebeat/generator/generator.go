@@ -71,7 +71,7 @@ func AppendTemplate(template, dest string, replace map[string]string) error {
 		_, err = f.Write(c)
 	}
 	if err != nil {
-		return fmt.Errorf("cannot append template: %v", err)
+		return fmt.Errorf("cannot append template: %w", err)
 	}
 
 	return nil
@@ -85,7 +85,7 @@ func copyTemplate(template, dest string, replace map[string]string) error {
 
 	err = ioutil.WriteFile(dest, c, 0o644)
 	if err != nil {
-		return fmt.Errorf("cannot copy template: %v", err)
+		return fmt.Errorf("cannot copy template: %w", err)
 	}
 
 	return nil
@@ -94,7 +94,7 @@ func copyTemplate(template, dest string, replace map[string]string) error {
 func readTemplate(template string, replace map[string]string) ([]byte, error) {
 	c, err := ioutil.ReadFile(template)
 	if err != nil {
-		return []byte{}, fmt.Errorf("cannot read template: %v", err)
+		return []byte{}, fmt.Errorf("cannot read template: %w", err)
 	}
 
 	for oldV, newV := range replace {
