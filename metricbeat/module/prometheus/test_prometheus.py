@@ -64,7 +64,7 @@ class Test(metricbeat.BaseTest):
 
         self.assert_fields_are_documented(evt)
 
-
+@unittest.skip("failing with Docker incompatibility: https://github.com/elastic/beats/issues/38908")
 class TestRemoteWrite(metricbeat.BaseTest):
 
     COMPOSE_SERVICES = ['prometheus-host-network']
