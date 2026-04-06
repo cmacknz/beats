@@ -22,12 +22,14 @@ import (
 	_ "github.com/elastic/beats/v7/libbeat/autodiscover/providers/jolokia"
 	_ "github.com/elastic/beats/v7/libbeat/monitoring/report/elasticsearch" // Register default monitoring reporting
 	_ "github.com/elastic/beats/v7/libbeat/processors/actions"              // Register default processors.
-	_ "github.com/elastic/beats/v7/libbeat/processors/add_cloud_metadata"
+
+	// _ "github.com/elastic/beats/v7/libbeat/processors/add_cloud_metadata"
 	_ "github.com/elastic/beats/v7/libbeat/processors/add_formatted_index"
-	_ "github.com/elastic/beats/v7/libbeat/processors/add_host_metadata"
+	// _ "github.com/elastic/beats/v7/libbeat/processors/add_host_metadata"
 	_ "github.com/elastic/beats/v7/libbeat/processors/add_id"
 	_ "github.com/elastic/beats/v7/libbeat/processors/add_locale"
-	_ "github.com/elastic/beats/v7/libbeat/processors/add_observer_metadata"
+
+	// _ "github.com/elastic/beats/v7/libbeat/processors/add_observer_metadata"
 	_ "github.com/elastic/beats/v7/libbeat/processors/add_process_metadata"
 	_ "github.com/elastic/beats/v7/libbeat/processors/communityid"
 	_ "github.com/elastic/beats/v7/libbeat/processors/convert"

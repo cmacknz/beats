@@ -19,15 +19,11 @@
 
 package autodiscover
 
-import (
-	"time"
-
-	"github.com/elastic/beats/v7/libbeat/autodiscover/providers/docker"
-	"github.com/elastic/beats/v7/libbeat/autodiscover/providers/kubernetes"
-)
+// "github.com/elastic/beats/v7/libbeat/autodiscover/providers/docker"
+// "github.com/elastic/beats/v7/libbeat/autodiscover/providers/kubernetes"
 
 // InitializeModule initializes this module.
 func InitializeModule() {
-	docker.DefaultCleanupTimeout = 60 * time.Second
-	kubernetes.DefaultCleanupTimeout = 60 * time.Second
+	// docker.DefaultCleanupTimeout = 60 * time.Second
+	// kubernetes.DefaultCleanupTimeout = 60 * time.Second
 }

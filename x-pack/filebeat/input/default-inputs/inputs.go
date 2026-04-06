@@ -5,7 +5,6 @@
 package inputs
 
 import (
-	ossinputs "github.com/elastic/beats/v7/filebeat/input/default-inputs"
 	v2 "github.com/elastic/beats/v7/filebeat/input/v2"
 	"github.com/elastic/beats/v7/libbeat/beat"
 	"github.com/elastic/beats/v7/libbeat/statestore"
@@ -16,6 +15,6 @@ import (
 func Init(info beat.Info, log *logp.Logger, store statestore.States, p *paths.Path) []v2.Plugin {
 	return append(
 		xpackInputs(info, log, store, p),
-		ossinputs.Init(info, log, store, p)...,
+		// ossinputs.Init(info, log, store, p)...,
 	)
 }

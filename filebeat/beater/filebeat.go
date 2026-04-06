@@ -33,7 +33,9 @@ import (
 	v2 "github.com/elastic/beats/v7/filebeat/input/v2"
 	"github.com/elastic/beats/v7/filebeat/input/v2/compat"
 	"github.com/elastic/beats/v7/filebeat/registrar"
-	"github.com/elastic/beats/v7/libbeat/autodiscover"
+
+	// "github.com/elastic/beats/v7/libbeat/autodiscover"
+
 	"github.com/elastic/beats/v7/libbeat/beat"
 	"github.com/elastic/beats/v7/libbeat/cfgfile"
 	"github.com/elastic/beats/v7/libbeat/common/cfgwarn"
@@ -54,9 +56,8 @@ import (
 	// Add filebeat level processors
 	_ "github.com/elastic/beats/v7/filebeat/processor/add_kubernetes_metadata"
 	_ "github.com/elastic/beats/v7/libbeat/processors/decode_csv_fields"
-
 	// include all filebeat specific autodiscover features
-	_ "github.com/elastic/beats/v7/filebeat/autodiscover"
+	// _ "github.com/elastic/beats/v7/filebeat/autodiscover"
 )
 
 const pipelinesWarning = "Filebeat is unable to load the ingest pipelines for the configured" +
@@ -486,25 +487,25 @@ func (fb *Filebeat) Run(b *beat.Beat) error {
 
 	modules := cfgfile.NewRunnerList(management.DebugK, moduleLoader, fb.pipeline, fb.logger)
 
-	var adiscover *autodiscover.Autodiscover
-	if fb.config.Autodiscover != nil {
-		adiscover, err = autodiscover.NewAutodiscover(
-			"filebeat",
-			fb.pipeline,
-			cfgfile.MultiplexedRunnerFactory(
-				cfgfile.MatchHasField("module", moduleLoader),
-				cfgfile.MatchDefault(inputLoader),
-			),
-			autodiscover.QueryConfig(),
-			config.Autodiscover,
-			b.Keystore,
-			fb.logger,
-		)
-		if err != nil {
-			return err
-		}
-	}
-	adiscover.Start()
+	// var adiscover *autodiscover.Autodiscover
+	// if fb.config.Autodiscover != nil {
+	// 	adiscover, err = autodiscover.NewAutodiscover(
+	// 		"filebeat",
+	// 		fb.pipeline,
+	// 		cfgfile.MultiplexedRunnerFactory(
+	// 			cfgfile.MatchHasField("module", moduleLoader),
+	// 			cfgfile.MatchDefault(inputLoader),
+	// 		),
+	// 		autodiscover.QueryConfig(),
+	// 		config.Autodiscover,
+	// 		b.Keystore,
+	// 		fb.logger,
+	// 	)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+	// adiscover.Start()
 
 	b.Manager.PostInit()
 	managerEarlyStop = nil
@@ -519,7 +520,7 @@ func (fb *Filebeat) Run(b *beat.Beat) error {
 	//       or publisher might panic due to concurrent updates.
 	inputs.Stop()
 	modules.Stop()
-	adiscover.Stop()
+	// adiscover.Stop()
 	crawler.Stop()
 	cancelPipelineFactoryCtx()
 
